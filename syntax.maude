@@ -1,0 +1,173 @@
+***( 
+A Rewrite theory for Attack-Defence Trees
+=========================================
+
+This file defines the syntax of Attack-Defense Trees (ADT). Constructors for
+the different gates(And, Or, etc) are defined. Configurations (defined in
+Maude's module CONFIGURATION) are used for such representation.  
+
+SYNTAX
+======
+
+< 'id : C | attributes >
+- 'id is a quoted identifier (QID)
+- Is a class identifier:
+C ::= AND | OR | SAND | NOT | ATK | DEF
+
+AND, OR and NOT  denote, respectively,  conjunction,  disjunction and negation.
+SAND represents a sequential AND.  ATK (resp. DEF) is the class identifier for
+an attack (resp. defense)
+
+The attributes for nodes are:
+- time: the duration of the node
+- cost: the cost of the node
+- acctime and acccost: the time and cost accumulated in nodes with children
+- lchd: list of children (applies for SAND where the order of the elements
+  matters)
+- schd: set of children (AND and OR where the order is irrelevant)
+- stat: Current state or the node: Unknown | Succeed | Fail 
+
+*)
+
+--- Defining a view to implement lists and sets of Oids (the identifiers of the
+--- nodes
+
+mod OID-ELT is
+ pr CONFIGURATION .
+endm
+
+view Oid-Elt from TRIV to OID-ELT is
+  sort Elt to Oid .
+endv
+
+
+--- Syntax for Nodes (attributes + constructors)
+
+mod SYNTAX is
+ pr LIST{Oid-Elt} * (sort NeList{Oid-Elt} to NeNodeList, 
+                     sort List{Oid-Elt}   to NodeList      ) .
+ pr SET{Oid-Elt}  * (sort NeSet{Oid-Elt}  to NeNodeSet, 
+                     sort Set{Oid-Elt}    to NodeSet        ) .
+
+ pr QID .
+ pr NAT .
+
+
+ --- Identifiers for Nodes, ex., 'TS
+ subsort Qid < Oid .
+
+ --- --------------------
+ --- Class IDs for Nodes
+ --- --------------------
+ op NOT :     -> Cid [ctor] .
+ op AND :     -> Cid [ctor] .
+ op SAND :    -> Cid [ctor] . --- Sequential AND
+ op OR :      -> Cid [ctor] .
+
+ --- Leaves (attacks or defends)
+ op ATK :     -> Cid [ctor] . 
+ op DEF :     -> Cid [ctor] .
+ --- ----------------------------------
+
+ --- --------------------
+ --- Attributes for nodes
+ --- --------------------
+ op time:_    : Nat      -> Attribute [ctor] . 
+ op cost:_    : Nat      -> Attribute [ctor] . 
+ --- Accumulated cost and time
+ op acctime:_ : Nat      -> Attribute [ctor] . 
+ op acccost:_ : Nat      -> Attribute [ctor] . 
+ --- Lists and sets of nodes
+ op lchd:_ : NodeList -> Attribute [ctor] .
+ op schd:_ : NodeSet  -> Attribute [ctor] .
+ --- States of Nodes
+ sort Status .
+ ops Fail Succeed Unknown  : -> Status [ctor] .
+ op stat:_ : Status -> Attribute [ctor] .
+
+
+
+ --- ------------------------------------
+ --- Constructors for the different nodes
+ --- ------------------------------------
+
+ ----------------------------
+ var S            : NodeSet  .
+ var L            : NodeList .
+ vars t c t' c'   : Nat .
+ var Q            : Qid .
+ var C            : Cid .
+ var o            : Oid .
+ vars ats ats'    : AttributeSet .
+ var  Cnf         : Configuration .
+ ----------------------------
+
+ op makeAnd : Qid NodeSet Nat Nat -> Object .
+ eq makeAnd(Q, S, t, c) = 
+    < Q : AND | time: t , cost: c, acctime: 0, acccost: 0, schd: S, stat: Unknown > .
+ op makeAnd : Qid NodeSet -> Object .
+ eq makeAnd(Q, S) =
+    makeAnd(Q,S, 0, 0 ) .
+
+ op makeSAnd : Qid NodeList Nat Nat -> Object .
+ eq makeSAnd(Q, L, t, c) = 
+    < Q : SAND | time: t , cost: c, acctime: 0, acccost: 0, lchd: L, stat: Unknown > .
+ op makeSAnd : Qid NodeList -> Object .
+ eq makeSAnd(Q, L) = 
+    makeSAnd(Q,L, 0, 0 ) .
+
+ op makeOr : Qid NodeSet Nat Nat -> Object .
+ eq makeOr(Q, S, t, c) = 
+    < Q : OR | time: t , cost: c, acctime: 0, acccost: 0 ,schd: S, stat: Unknown > .
+ op makeOr : Qid NodeSet -> Object .
+ eq makeOr(Q, S) = 
+    makeOr(Q,S, 0, 0 ) .
+
+ op makeAtk : Qid Nat Nat -> Object .
+ op makeAtk : Qid         -> Object .
+ eq makeAtk(Q, t, c) = 
+    < Q : ATK | time: t, cost: c, acctime: 0, acccost: 0, stat: Unknown > .
+ eq makeAtk(Q) = 
+    makeAtk(Q,0,0) .
+ op makeDef : Qid Nat Nat -> Object .
+ op makeDef : Qid         -> Object .
+ eq makeDef(Q, t, c) = 
+    < Q : DEF | time: t, cost: c, acctime: 0, acccost: 0, stat: Unknown > .
+ eq makeDef(Q) = 
+    makeDef(Q,0,0) .
+
+ op makeNot : Qid Oid -> Object .
+ eq makeNot(Q, o) = 
+    < Q : NOT    | lchd: o > .
+
+
+ --- A global configuration/goal
+ --- The first parameter is the ID of the main goal (the root of the tree)
+ --- The second parameter is the configuration with the definition of the nodes
+ op {_;_} : Qid Configuration -> Configuration .
+
+ --- Final configuration only with the main goal
+ op {_}   :  Object -> Configuration .
+ eq  { Q ; < Q : C | stat: Succeed, ats > Cnf } = --- The other nodes in Cnf are ignored
+     {     < Q : C | stat: Succeed, ats > } .
+
+ --- ---------------------
+ --- Accumulating values
+ --- ---------------------
+
+ --- Summing up the attributes of the children to the parent
+ op accumulate : AttributeSet AttributeSet -> AttributeSet .
+ eq accumulate( (acctime: t,         acccost: c,        ats) , (acctime: t', acccost: c', ats')) =
+                (acctime: (t + t'),  acccost: (c + c'), ats) .
+
+ --- The same as the previous one but using max to accumulate the values
+ op accumulateMax : AttributeSet AttributeSet -> AttributeSet .
+ eq accumulateMax( (acctime: t,           acccost: c,           ats) , (acctime: t', acccost: c', ats')) =
+                   (acctime: max(t , t'), acccost: max(c , c'), ats) .
+
+ --- Accumulating the values of a node (summing up the accumulated time of the
+ --- children and the time of the node )
+ op simpl : AttributeSet -> AttributeSet .
+ eq simpl( (time: t', cost: c', acctime: t,        acccost: c,        ats)) = 
+           (time: t', cost: c', acctime: (t + t'), acccost: (c + c'), ats) .
+endm

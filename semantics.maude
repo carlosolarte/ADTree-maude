@@ -1,0 +1,118 @@
+
+***( 
+A Rewrite theory for Attack-Defence Trees
+=========================================
+
+This file defines the semantics for nodes. 
+
+- ATK: Attacks are always willing to happen. Then, an equation reduces eagerly
+  ATK nodes into successful nodes.
+- DEF: Defenses may or not happen. Hence, the rules ChoiceOK and ChoiceNOK
+  consider both cases/choices. 
+- SAND: Children (a list of node identifiers) are evaluated in order. If one of
+  the children fails, the node fails immediately. When all the children
+  succeed, then the node succeeds. 
+- AND: Children are evaluated in any order. If one of them succeed, the
+  time/cost is accumulated using two alternatives: + or max, depending whether
+  the attack was performed sequentially or in parallel with other agents. If
+  one of the children fails, then the whole node fails. When all the children
+  succeed, the node succeeds. 
+- OR: Children are evaluated in any order. If one of them succeeds, the whole
+  node succeeds. If one of them fails, it is discarded from the set of
+  children. If all of them fail, then the node fails. 
+- NOT: If the node succeeds, then the result fails and vice-versa.
+
+*)
+
+load syntax .
+
+mod SEMANTICS is
+
+ pr SYNTAX .
+
+ --- ---------------------------
+ var S            : NodeSet  .
+ var L            : NodeList .
+ vars t c t' c'   : Nat .
+ var Q            : Qid .
+ vars ats ats'    : AttributeSet .
+ vars o           : Oid .
+ vars C C'        : Cid .
+ var st           : Status .
+ --- ---------------------------
+
+
+  --- Attacks are always "willing" to happen
+  eq  < Q : ATK | stat: Unknown, ats > =
+      < Q : ATK | stat: Succeed, simpl(ats) > .
+
+  --- A defense may succeed or not
+  rl [ChoiceOK]   : < Q : DEF | stat: Unknown, ats > =>
+                    < Q : DEF | stat: Succeed, simpl(ats) > .
+  rl [ChoiceNOK]  : < Q : DEF | stat: Unknown, ats > =>
+                    < Q : DEF | stat: Fail, simpl(ats) >  .
+
+
+  --- Sequential AND 
+  --- Successful child
+  eq < Q : SAND   | lchd: (o L), stat: Unknown,  ats  >
+     < o    : C   |              stat: Succeed, ats' > =
+     < Q : SAND   | accumulate((lchd: L, stat: Unknown, ats), ats') > .
+
+  --- Failing child
+  eq < Q : SAND   | lchd: (o L), stat: Unknown,   ats  >
+     < o    : C   |              stat: Fail,      ats' > =
+     < Q : SAND   | lchd: L,     stat: Fail, accumulate(ats,ats') > .
+
+  --- No more children
+  eq < Q : SAND   | lchd: nil, stat: Unknown, ats > =
+     < Q : SAND   | lchd: nil, stat: Succeed,  simpl(ats) > .
+
+
+
+  --- OR 
+  --- Successful child 
+  rl [OR] : < Q : OR | schd: (o, S), stat: Unknown, ats > 
+            < o : C  |               stat: Succeed, ats' >  =>
+            < Q : OR | schd: empty,  stat: Succeed, simpl(accumulate(ats,ats')) > .
+
+  --- Failing child
+  eq < Q : OR    | schd: (o, S), stat: Unknown,  ats >
+     < o : C     |               stat: Fail,     ats'  > =
+     < Q : OR    | schd: S,      stat: Unknown,  ats > .
+
+  --- No more children
+  eq < Q : OR | schd: empty, stat: Unknown, ats > =
+     < Q : OR | schd: empty, stat: Fail,    simpl(ats) > .
+
+
+
+  --- Parallel AND
+  --- Accumulating with max (multiple agents)
+  rl [PAND] : < Q : AND | schd: (o, S), stat: Unknown,  ats >
+              < o : C   |               stat: Succeed,  ats'  > =>
+              < Q : AND | schd: S,      stat: Unknown,  accumulateMax(ats,ats') > .
+
+  --- Accumulating with + (only one agent)
+  rl [PANDSeq] : < Q : AND  | schd: (o, S), stat: Unknown,  ats >
+                 < o : C    |               stat: Succeed,  ats'  > =>
+                 < Q : AND  | accumulate( (schd: S, stat: Unknown, ats),ats') > .
+
+  --- Failing child
+  eq             < Q : AND | schd: (o, S), stat: Unknown,  ats >
+                 < o : C   |               stat: Fail,     ats' > =
+                 < Q : AND | schd: empty , stat: Fail,     ats > .
+
+  --- Empty set of children 
+  eq < Q : AND | schd: empty, stat: Unknown, ats > =
+     < Q : AND | schd: empty, stat: Succeed, simpl(ats) > .
+
+
+ --- NOT
+ eq [NOT] : < Q : NOT | lchd: o >
+            < o : C   | stat: Succeed, ats > =
+            < Q : C   | stat: Fail, simpl(ats) > .
+ eq [NOT] : < Q : NOT | lchd: o >
+            < o : C   | stat: Fail, ats > =
+            < Q : C   | stat: Succeed, simpl(ats) > .
+endm

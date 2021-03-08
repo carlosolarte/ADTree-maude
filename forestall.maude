@@ -1,0 +1,70 @@
+***(
+
+Forestalling a software release
+================================
+
+See Fig. 4 in J. Arias, C. E. Budde, W. Penczek, L. Petrucci, T.  Sidoruk, M.
+Stoelinga: Hackers vs. Security: Attack-Defence Trees as Asynchronous
+Multi-agent Systems. ICFEM 2020: 3-19
+
+Syntax for queries in the end of the file
+
+*)
+
+load semantics .
+
+mod FORESTALL-TEST is
+ pr SEMANTICS .
+
+ var C    : Configuration .
+
+
+ op NA : -> Configuration .
+ eq NA = makeAtk('hh,20,100)
+         makeAtk('sb)
+         makeAtk('heb,3,0)
+         makeSAnd('NA, ('hh 'sb 'heb), 1, 0) .
+
+
+ op PR : -> Configuration .
+ eq PR = makeAtk('hr, 10, 4000)
+         makeAtk('reb,3, 500)
+         makeAtk('rfc)
+         makeSAnd('PR, 'hr 'reb 'rfc) .
+
+
+ op BRP : -> Configuration .
+ eq BRP = makeAtk('bp, 15, 2000)
+          makeAtk('psc, 7, 0)
+          makeSAnd('BRP, 'bp 'psc, 3, 0) .
+
+
+ op NAS : -> Configuration .
+ eq NAS = makeDef('id, 1, 200)
+          makeNot('~id, 'id)
+          makeSAnd('NAS, 'NA '~id) .
+
+ op PRS : -> Configuration .
+ eq PRS = makeDef('scr, 0, 5000)
+          makeNot('~scr, 'scr)
+          makeAnd('PRS, ('PR, '~scr)) .
+
+
+ op SC : -> Object .
+ eq SC = makeOr('SC, ('BRP, 'NAS, 'PRS)) .
+
+ op FS : -> Configuration .
+ eq FS = makeAtk('icp, 15, 2000)
+         makeAtk('dtm, 5, 1000)
+         makeSAnd('FS, 'SC 'icp 'dtm, 10, 0) .
+
+ op System : -> Configuration .
+ eq System = {'FS ;  NA PR BRP NAS PRS SC FS } .
+
+endm
+
+eof
+
+--- Query
+search System =>* { C } .
+

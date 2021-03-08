@@ -1,0 +1,54 @@
+
+***( 
+
+Steal Jewels Example
+====================
+
+See Fig. 1 in J. Arias, C. E. Budde, W. Penczek, L. Petrucci, T.  Sidoruk, M.
+Stoelinga: Hackers vs. Security: Attack-Defence Trees as Asynchronous
+Multi-agent Systems. ICFEM 2020: 3-19
+
+Syntax for queries in the end of the file
+
+*)
+
+load semantics .
+
+mod SJ-TEST is
+ pr SEMANTICS .
+
+ var C : Configuration .
+
+ op bi : -> Object .
+ eq bi = makeAtk('bi) .
+ op p : -> Object .
+ eq p = makeDef('p) .
+ op ~p : -> Object .
+ eq ~p = makeNot('~p, 'p) .
+ op fd : -> Object .
+ eq fd = makeAtk('fd) .
+ op SJ : -> Object .
+ eq SJ = makeAnd('SJ, ('bi, 'fd)) .
+
+ op SJS : -> Object .
+ eq SJS = makeAnd('SJS, ('SJ, '~p )) .
+
+ op System : -> Configuration .
+ eq System = {'SJS ;   bi p ~p fd SJ SJS } .
+
+endm
+
+eof
+
+--- Query
+search System =>* { C } .
+
+--- Result
+Solution 1 (state 24)
+states: 25  rewrites: 431 in 1ms cpu (1ms real) (260738 rewrites/second)
+C --> < 'SJS : AND | time: 0,cost: 0,acctime: 0,acccost: 0,schd: empty,stat: Succeed >
+
+--- Inspecting the path to the attack
+show path 24 .
+show path label 24 .
+

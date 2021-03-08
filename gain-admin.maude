@@ -1,0 +1,80 @@
+***(
+
+Gain admin example
+==================
+
+See Fig. 7 in J. Arias, C. E. Budde, W. Penczek, L. Petrucci, T.  Sidoruk, M.
+Stoelinga: Hackers vs. Security: Attack-Defence Trees as Asynchronous
+Multi-agent Systems. ICFEM 2020: 3-19
+
+Syntax for queries in the end of the file
+
+*)
+
+load semantics .
+
+mod GAIN-ADMIN-TEST is
+ pr SEMANTICS .
+
+ var C    : Configuration .
+
+
+  ops ECC GAP LSA DTH : -> Configuration .
+  eq ECC = makeAtk('bcc, 2 * 1440, 6000)
+           makeAtk('ccg, 5 * 1440, 100 )
+           makeOr('ECC, ('bcc, 'ccg)) .
+
+  eq GAP = makeAtk('opf, 3 * 1440, 100)
+           makeAtk('fgp, 1440,0)
+           makeSAnd('GAP, 'opf 'fgp, 10, 0) .
+
+
+  eq LSA = makeAtk('bsa,14 * 1440, 500)
+           makeAtk('vsa, 2 * 1440, 20 )
+           makeAtk('sat, 30, 0)
+           makeSAnd('LSA, 'bsa 'vsa 'sat) .
+
+
+  eq DTH = makeAtk('wd,5,2000)
+           makeAtk('efw, 0, 3000)
+           makeOr('DTH, ('wd, 'efw)) .
+
+ 
+  ops ECCS GAPS LSAS TSA : -> Configuration .
+  eq ECCS = makeDef('scr, 0, 5000)
+            makeNot('~scr, 'scr)
+            makeAnd('ECCS, ('~scr, 'ECC),1 * 60, 0 ) .
+           
+
+
+  eq GAPS = makeDef('tla,1,5)
+            makeNot('~tla, 'tla)
+            makeSAnd('GAPS, 'GAP '~tla, 2, 0) .
+
+  eq LSAS = makeDef('nv)
+            makeNot('~nv, 'nv)
+            makeAnd('LSAS, ('LSA, '~nv)) .
+
+  eq TSA  = makeAtk('th, 3 * 1440, 100)
+            makeNot('~DTH, 'DTH)
+            makeAnd('TSA, ('th, '~DTH)) .
+
+  ops ACLI GSAP : -> Configuration .
+
+  eq ACLI = makeAtk('co, 4 * 1440, 4000)
+            makeOr('ACLI, ('co, 'ECCS), 2, 0) .
+
+  eq GSAP = makeAtk('csa, 5 * 1440, 5000)
+            makeOr('GSAP, ('GAPS, 'LSAS, 'TSA, 'csa)) .
+
+  op OAP : -> Object .
+  eq OAP = makeOr('OAP, ('ACLI, 'GSAP)) .
+
+  op System : -> Configuration .
+  eq System = {'OAP ;   ECC GAP LSA DTH ECCS GAPS LSAS TSA ACLI GSAP OAP } .
+endm
+
+eof
+
+search System =>* { C } .
+
