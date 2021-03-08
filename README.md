@@ -64,13 +64,14 @@ More details about the syntax for specifying ADTrees can be found in
 
 
 This package is free software; you can redistribute it and/or modify it under
-the terms of GNU Lesser General Public License (see the COPYING file).
+the terms of GNU Lesser General Public License (see the LICENSE file).
 
 
 ## Refences
 
-[1] _Sjouke Mauw, Martijn Oostdijk_: Foundations of Attack Trees. ICISC 2005:
-186-198
+[1] _Barbara Kordy, Sjouke Mauw, Saša Radomirović, Patrick Schweitzer_:
+Attack–defense trees. Journal of Logic and Computation, Volume 24, Issue 1.
+2004 186-198
 
 [2] _Jaime Arias, Carlos E. Budde, Wojciech Penczek, Laure Petrucci, Teofil
 Sidoruk, Mariëlle Stoelinga_: Hackers vs. Security: Attack-Defence Trees as

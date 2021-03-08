@@ -76,6 +76,12 @@ mod SEMANTICS is
             < o : C  |               stat: Succeed, ats' >  =>
             < Q : OR | schd: empty,  stat: Succeed, simpl(accumulate(ats,ats')) > .
 
+  --- We may have an OR where multiple children are executed?
+  --- crl [OR] : < Q : OR | schd: (o, S), stat: Unknown, ats > 
+  ---            < o : C  |               stat: Succeed, ats' >  =>
+  ---            < Q : OR | accumulate((schd: S,  stat: Unknown, ats), ats') > 
+  ---            if S =/= empty .
+
   --- Failing child
   eq < Q : OR    | schd: (o, S), stat: Unknown,  ats >
      < o : C     |               stat: Fail,     ats'  > =

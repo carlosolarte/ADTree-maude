@@ -163,7 +163,7 @@ mod SYNTAX is
  --- The same as the previous one but using max to accumulate the values
  op accumulateMax : AttributeSet AttributeSet -> AttributeSet .
  eq accumulateMax( (acctime: t,           acccost: c,           ats) , (acctime: t', acccost: c', ats')) =
-                   (acctime: max(t , t'), acccost: max(c , c'), ats) .
+                   (acctime: max(t , t'), acccost: (c + c') ,   ats) .
 
  --- Accumulating the values of a node (summing up the accumulated time of the
  --- children and the time of the node )
