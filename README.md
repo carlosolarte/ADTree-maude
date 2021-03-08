@@ -34,6 +34,8 @@ The specification includes the following files:
 - *gain-admin.maude*: Models the attack for obtaining root privileges on a
   server. 
 
+- *iot-dev.maude*: Attack to an IoT device (via wireless or LAN).
+
 Further details and motivations for these systems can be found in [2]. 
 
 ## Execution and Queries

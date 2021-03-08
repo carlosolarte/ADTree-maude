@@ -1,0 +1,67 @@
+***(
+
+Compromise IoT device
+================================
+
+See Fig. 4 in J. Arias, C. E. Budde, W. Penczek, L. Petrucci, T.  Sidoruk, M.
+Stoelinga: Hackers vs. Security: Attack-Defence Trees as Asynchronous
+Multi-agent Systems. ICFEM 2020: 3-19
+
+Syntax for queries in the end of the file
+
+Note: The semantics of OR only chooses one of the children (when it becomes
+"Succeed"). Hence, the maximal time reported here does not coincide with the
+one in the reference above that also considers that several OR-children can 
+be performed. 
+
+*)
+
+load semantics .
+
+mod IOT-DEV-TEST is
+ pr SEMANTICS .
+
+ var C    : Configuration .
+
+ op AL : -> Configuration .
+ eq AL = makeAtk('flp, 60,10)
+         makeAtk('sma, 30,50)
+         makeSAnd('AL, 'flp 'sma) .
+
+ op AW : -> Configuration .
+ eq AW = makeAtk('fw, 5 * 60, 10)
+         makeAtk('bwk, 2 * 60, 100)
+         makeSAnd('AW, 'fw 'bwk) .
+
+ op CPN : -> Object .
+ eq CPN = makeOr('CPN, ('AL, 'AW)) .
+
+ op GVC : -> Configuration .
+ eq GVC = makeAtk('gc, 10 * 60, 100 )
+          makeDef('tla, 0, 0)
+          makeNot('~tla, 'tla)
+          makeAnd('GVC, ('gc, '~tla)) .
+
+ op APN : -> Object .
+ eq APN = makeAnd('APN, ('CPN, 'GVC),3,0) .
+
+ op APNS : -> Configuration .
+ eq APNS = makeDef('inc, 0, 0)
+           makeNot('~inc, 'inc)
+           makeSAnd('APNS, 'APN '~inc, 1, 0) .
+
+ op CioTD : -> Configuration .
+ eq CioTD = makeAtk('esv, 1 * 60, 10)
+            makeAtk('rms, 30, 100)
+            makeSAnd('CioTD, 'APNS 'esv 'rms) .
+
+ op System : -> Configuration .
+ eq System = {'CioTD ;  AL AW CPN GVC APN APNS CioTD } .
+
+endm
+
+eof
+
+--- Query
+search System =>* { C } .
+
